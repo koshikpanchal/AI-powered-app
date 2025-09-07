@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { Button } from "./components/ui/button";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -11,7 +12,12 @@ function App() {
     fetchData();
   }, []);
 
-  return <p className="font-bold p-4 text-3xl">{message}</p>;
+  return (
+    <div className="p-4">
+      <Button>Click me</Button>
+      <p className="font-bold text-3xl">{message}</p>
+    </div>
+  );
 }
 
 export default App;
