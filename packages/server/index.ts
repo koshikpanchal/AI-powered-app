@@ -2,6 +2,7 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { OpenAI } from 'openai';
+import z from 'zod';
 
 dotenv.config();
 
@@ -24,7 +25,23 @@ app.get('/', (req: Request, res: Response) => {
 
 const conversations = new Map<string, string>();
 
+const chatSchema = z.object({
+   prompt: z
+      .string()
+      .trim()
+      .min(1, 'prompt is required')
+      .max(1000, 'prompt is too big, 100 characters only'),
+   conversationId: z.uuid(),
+});
+
 app.post('/api/chat', async (req: Request, res: Response) => {
+   const parseResult = chatSchema.safeParse(req.body);
+
+   if (!parseResult.success) {
+      res.status(400).json(parseResult.error);
+      return;
+   }
+
    const { prompt, conversationId } = req.body;
 
    try {
