@@ -1,8 +1,9 @@
-import express from 'express';
+import express, { request } from 'express';
 import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { OpenAI } from 'openai';
 import z from 'zod';
+import { conversationRepository } from './repositories/conversation.repository';
 
 dotenv.config();
 
@@ -18,12 +19,6 @@ const client = new OpenAI({
    baseURL: 'https://router.huggingface.co/v1',
    apiKey: process.env.HUGGING_FACE_ACCESS_KEY,
 });
-
-app.get('/', (req: Request, res: Response) => {
-   res.send('Hello world');
-});
-
-const conversations = new Map<string, string>();
 
 const chatSchema = z.object({
    prompt: z
@@ -42,15 +37,17 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       return;
    }
 
-   const { prompt, conversationId } = req.body;
-
    try {
+      const { prompt, conversationId } = req.body;
       const response = await client.responses.create({
          model: MODEL,
          input: prompt,
          temperature: 0.2,
-         previous_response_id: conversations.get(conversationId),
+         previous_response_id:
+            conversationRepository.getLastConversationId(conversationId),
       });
+
+      conversationRepository.setLastConversationId(conversationId, response.id);
 
       let output = response.output_text
          .replace(/<think>[\s\S]*?<\/think>/g, '')
