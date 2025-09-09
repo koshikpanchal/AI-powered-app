@@ -1,24 +1,14 @@
 import express, { request } from 'express';
 import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { OpenAI } from 'openai';
 import z from 'zod';
-import { conversationRepository } from './repositories/conversation.repository';
+import { chatService } from './services/chat.service';
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 const port = process.env.PORT || 3000;
-
-// Hugging Face model endpoint via OpenAI SDK
-const MODEL = 'HuggingFaceTB/SmolLM3-3B:hf-inference';
-
-// Create a reusable client once
-const client = new OpenAI({
-   baseURL: 'https://router.huggingface.co/v1',
-   apiKey: process.env.HUGGING_FACE_ACCESS_KEY,
-});
 
 const chatSchema = z.object({
    prompt: z
@@ -39,21 +29,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
    try {
       const { prompt, conversationId } = req.body;
-      const response = await client.responses.create({
-         model: MODEL,
-         input: prompt,
-         temperature: 0.2,
-         previous_response_id:
-            conversationRepository.getLastConversationId(conversationId),
-      });
-
-      conversationRepository.setLastConversationId(conversationId, response.id);
-
-      let output = response.output_text
-         .replace(/<think>[\s\S]*?<\/think>/g, '')
-         .trim();
-
-      res.json({ reply: output });
+      const response = await chatService.sendMessage(prompt, conversationId);
+      res.json({ reply: response.message });
    } catch (err: any) {
       console.error(err.response?.data || err.message);
       res.status(500).json({ error: err.response?.data || err.message });
