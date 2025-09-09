@@ -22,24 +22,22 @@ app.get('/', (req: Request, res: Response) => {
    res.send('Hello world');
 });
 
+const conversations = new Map<string, string>();
+
 app.post('/api/chat', async (req: Request, res: Response) => {
-   const { prompt } = req.body;
+   const { prompt, conversationId } = req.body;
 
    try {
-      const chatCompletion = await client.chat.completions.create({
+      const response = await client.responses.create({
          model: MODEL,
-         messages: [
-            {
-               role: 'user',
-               content: prompt,
-            },
-         ],
+         input: prompt,
+         temperature: 0.2,
+         previous_response_id: conversations.get(conversationId),
       });
 
-      let output = chatCompletion.choices[0]?.message?.content || '';
-
-      // 🧹 Remove <think>...</think> if present
-      output = output.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      let output = response.output_text
+         .replace(/<think>[\s\S]*?<\/think>/g, '')
+         .trim();
 
       res.json({ reply: output });
    } catch (err: any) {
