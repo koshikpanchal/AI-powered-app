@@ -35,6 +35,6 @@ export const chatService = {
          .replace(/<think>[\s\S]*?<\/think>/g, '')
          .trim();
 
-      return { id: response.id, message: response.output_text };
+      return { id: response.id, message: output };
    },
 };

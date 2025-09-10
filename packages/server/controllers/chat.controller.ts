@@ -23,7 +23,7 @@ export const chatController = {
       try {
          const { prompt, conversationId } = req.body;
          const response = await chatService.sendMessage(prompt, conversationId);
-         res.json({ reply: response.message });
+         res.json({ message: response.message });
       } catch (err: any) {
          console.error(err.response?.data || err.message);
          res.status(500).json({ error: err.response?.data || err.message });
