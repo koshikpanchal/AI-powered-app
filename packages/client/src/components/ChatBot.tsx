@@ -22,18 +22,18 @@ type Message = {
 const ChatBot = () => {
    const [messages, setMessages] = useState<Message[]>([]);
    const [isBotTyping, setIsBotTyping] = useState(false);
-   const formRef = useRef<HTMLFormElement | null>(null);
+   const lastMessageRef = useRef<HTMLDivElement | null>(null);
    const { register, handleSubmit, reset, formState } = useForm<FormData>();
    const conversationId = useRef(crypto.randomUUID());
 
    useEffect(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth' });
+      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
    }, [messages]);
 
    const onSubmit = async ({ prompt }: FormData) => {
       setMessages((prev) => [...prev, { content: prompt, role: 'user' }]);
       setIsBotTyping(true);
-      reset();
+      reset({ prompt: '' });
       const { data } = await axios.post<ChatResponse>('/api/chat', {
          prompt: prompt,
          conversationId: conversationId.current,
@@ -57,10 +57,10 @@ const ChatBot = () => {
       }
    };
    return (
-      <div>
-         <div className="flex flex-col gap-3 mb-10">
+      <div className="flex flex-col h-full">
+         <div className="flex flex-col flex-1 gap-3 mb-10 overflow-y-auto">
             {messages.map((message, index) => (
-               <p
+               <div
                   key={index}
                   onCopy={onCopyMessage}
                   className={`px-3 py-1 rounded-xl ${
@@ -68,9 +68,10 @@ const ChatBot = () => {
                         ? 'bg-blue-600 text-white self-end'
                         : 'bg-gray-300 text-black self-start'
                   }`}
+                  ref={index == messages.length - 1 ? lastMessageRef : null}
                >
                   <ReactMarkdown>{message.content}</ReactMarkdown>
-               </p>
+               </div>
             ))}
             {isBotTyping && (
                <div className="flex self-start gap-1 px-3 py-3 bg-gray-200">
@@ -84,7 +85,6 @@ const ChatBot = () => {
             onSubmit={handleSubmit(onSubmit)}
             onKeyDown={onKeyDown}
             className="flex flex-col gap-2 items-end border-2 p-2 rounded-3xl"
-            ref={formRef}
          >
             <textarea
                {...register('prompt', {
@@ -94,6 +94,7 @@ const ChatBot = () => {
                placeholder="Ask anything"
                maxLength={1000}
                className="w-full bor focus:outline-0 resize-none"
+               autoFocus
             />
             <Button
                disabled={!formState.isValid}
