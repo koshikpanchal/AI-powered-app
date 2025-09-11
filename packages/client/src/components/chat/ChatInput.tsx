@@ -25,6 +25,7 @@ const ChatInput = ({ onSubmit }: Props) => {
       reset({ prompt: '' });
       onSubmit(data);
    });
+
    return (
       <div>
          <form

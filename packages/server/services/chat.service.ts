@@ -1,5 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import OpenAI from 'openai';
 import { conversationRepository } from '../repositories/conversation.repository';
+import template from '../prompts/chatbot.txt';
 
 // Hugging Face model endpoint via OpenAI SDK
 const MODEL = 'HuggingFaceTB/SmolLM3-3B:hf-inference';
@@ -9,6 +12,13 @@ const client = new OpenAI({
    baseURL: 'https://router.huggingface.co/v1',
    apiKey: process.env.HUGGING_FACE_ACCESS_KEY,
 });
+
+const parkInfo = fs.readFileSync(
+   path.join(__dirname, '..', 'prompts', 'WonderWorld.md'),
+   'utf-8'
+);
+
+const instructions = template.replace('{{parkInfo}}', parkInfo);
 
 type ChatResponse = {
    id: string;
@@ -23,6 +33,7 @@ export const chatService = {
    ): Promise<ChatResponse> {
       const response = await client.responses.create({
          model: MODEL,
+         instructions,
          input: prompt,
          temperature: 0.2,
          previous_response_id:
