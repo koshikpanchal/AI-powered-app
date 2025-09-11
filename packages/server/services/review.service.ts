@@ -1,15 +1,6 @@
-import OpenAI from 'openai';
 import { type Review } from '../generated/prisma';
 import { reviewRespository } from '../repositories/review.repository';
-
-// Hugging Face model endpoint via OpenAI SDK
-const MODEL = 'HuggingFaceTB/SmolLM3-3B:hf-inference';
-
-// Create a reusable client once
-const client = new OpenAI({
-   baseURL: 'https://router.huggingface.co/v1',
-   apiKey: process.env.HUGGING_FACE_ACCESS_KEY,
-});
+import { llmClient } from '../llm/client';
 
 export const reviewService = {
    async getReview(productId: number): Promise<Review[]> {
@@ -23,14 +14,10 @@ export const reviewService = {
       
       ${joinedReviews}`;
 
-      const response = await client.responses.create({
-         model: MODEL,
-         input: prompt,
-         temperature: 0.2,
-         max_output_tokens: 500,
+      const response = await llmClient.generateText({
+         prompt,
       });
-      return response.output_text
-         .replace(/<think>[\s\S]*?<\/think>/g, '')
-         .trim();
+
+      return response.text;
    },
 };

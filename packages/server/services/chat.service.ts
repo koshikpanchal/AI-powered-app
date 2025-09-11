@@ -1,17 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import OpenAI from 'openai';
 import { conversationRepository } from '../repositories/conversation.repository';
 import template from '../prompts/chatbot.txt';
-
-// Hugging Face model endpoint via OpenAI SDK
-const MODEL = 'HuggingFaceTB/SmolLM3-3B:hf-inference';
-
-// Create a reusable client once
-const client = new OpenAI({
-   baseURL: 'https://router.huggingface.co/v1',
-   apiKey: process.env.HUGGING_FACE_ACCESS_KEY,
-});
+import { llmClient } from '../llm/client';
 
 const parkInfo = fs.readFileSync(
    path.join(__dirname, '..', 'prompts', 'WonderWorld.md'),
@@ -31,21 +22,16 @@ export const chatService = {
       prompt: string,
       conversationId: string
    ): Promise<ChatResponse> {
-      const response = await client.responses.create({
-         model: MODEL,
+      const response = await llmClient.generateText({
          instructions,
-         input: prompt,
-         temperature: 0.2,
-         previous_response_id:
+         prompt,
+         max_output_tokens: 1000,
+         previousResponseId:
             conversationRepository.getLastConversationId(conversationId),
       });
 
       conversationRepository.setLastConversationId(conversationId, response.id);
 
-      let output = response.output_text
-         .replace(/<think>[\s\S]*?<\/think>/g, '')
-         .trim();
-
-      return { id: response.id, message: output };
+      return { id: response.id, message: response.text };
    },
 };
