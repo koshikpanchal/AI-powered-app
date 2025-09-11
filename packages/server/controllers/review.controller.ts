@@ -13,4 +13,16 @@ export const reviewController = {
 
       res.json(reviews);
    },
+
+   async summarizeReviews(req: Request, res: Response) {
+      const productId = Number(req.params.id);
+
+      if (isNaN(productId)) {
+         res.status(400).json({ error: 'Invalid Product ID' });
+      }
+
+      const summary = await reviewService.summarizeReview(productId);
+
+      res.json({ summary });
+   },
 };
