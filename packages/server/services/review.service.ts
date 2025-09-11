@@ -24,6 +24,8 @@ export const reviewService = {
          prompt,
       });
 
-      return response.text;
+      const summary = response.text;
+      await reviewRespository.storeReviewSummary(productId, summary);
+      return summary;
    },
 };
