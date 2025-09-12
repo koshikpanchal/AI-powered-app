@@ -4,30 +4,31 @@ import { productRepository } from '../repositories/product.repository';
 import { reviewRespository } from '../repositories/review.repository';
 
 export const reviewController = {
-   async fetchReviews(req: Request, res: Response) {
+   async getReviews(req: Request, res: Response) {
       const productId = Number(req.params.id);
 
       if (isNaN(productId)) {
          res.status(400).json({ error: 'Invalid Product ID' });
       }
 
-      const product = await productRepository.getProductRepository(productId);
+      const product = await productRepository.getProduct(productId);
 
       if (!product) {
-         res.status(400).json({ error: "product doesn't exist" });
+         res.status(404).json({ error: "product doesn't exist" });
          return;
       }
 
-      const reviews = reviewRespository.getReviews(productId, 1);
+      const reviews = await reviewRespository.getReviews(productId, 1);
 
       if (!reviews) {
          res.status(400).json({ error: "review doesn't exist" });
          return;
       }
 
-      const summary = await reviewService.getReview(productId);
+      const summary = await reviewRespository.getReviewSummary(productId);
+      const allReviews = await reviewRespository.getReviews(productId);
 
-      res.json(summary);
+      res.json({ summary, reviews: allReviews });
    },
 
    async summarizeReviews(req: Request, res: Response) {
