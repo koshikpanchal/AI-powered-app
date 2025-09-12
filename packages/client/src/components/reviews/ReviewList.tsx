@@ -23,12 +23,19 @@ type GetReviewsResponse = {
 const ReviewList = ({ productId }: Props) => {
    const [reviewData, setReviewData] = useState<GetReviewsResponse>();
    const [isLoading, setIsLoading] = useState<boolean>(false);
+   const [error, setError] = useState('');
 
    const fetchReviews = async () => {
-      setIsLoading(true);
-      const { data } = await axios.get(`/api/products/${productId}/reviews`);
-      setReviewData(data);
-      setIsLoading(false);
+      try {
+         setIsLoading(true);
+         const { data } = await axios.get(`/api/products/${productId}/reviews`);
+         setReviewData(data);
+         setIsLoading(false);
+      } catch (er) {
+         console.error(er);
+         setError('Could not fetch the review, try again!');
+         setIsLoading(false);
+      }
    };
 
    useEffect(() => {
@@ -47,6 +54,10 @@ const ReviewList = ({ productId }: Props) => {
             ))}
          </div>
       );
+   }
+
+   if (error) {
+      return <p className="text-red-500">{error}</p>;
    }
 
    return (
