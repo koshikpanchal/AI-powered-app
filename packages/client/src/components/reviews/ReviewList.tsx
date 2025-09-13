@@ -1,51 +1,26 @@
-import axios from 'axios';
 import StarRating from './StarRating';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import ReviewSkeleton from './ReviewSkeleton';
+import {
+   reviewsApi,
+   type GetReviewsResponse,
+   type SummarizeResponse,
+} from './ReviewsApi';
 
 type Props = {
    productId: number;
 };
 
-type Review = {
-   id: number;
-   author: string;
-   content: string;
-   rating: number;
-   createdAt: string;
-};
-
-type GetReviewsResponse = {
-   summary: string | null;
-   reviews: Review[];
-};
-
-type SummarizeResponse = {
-   summary: string;
-};
-
 const ReviewList = ({ productId }: Props) => {
    const reviewsQuery = useQuery<GetReviewsResponse>({
       queryKey: ['reviews', productId],
-      queryFn: () => fetchReviews(),
+      queryFn: () => reviewsApi.fetchReviews(productId),
    });
 
    const summaryMutation = useMutation<SummarizeResponse>({
-      mutationFn: () => summarizeReview(),
+      mutationFn: () => reviewsApi.summarizeReviews(productId),
    });
-
-   const fetchReviews = async () => {
-      const { data } = await axios.get(`/api/products/${productId}/reviews`);
-      return data;
-   };
-
-   const summarizeReview = async () => {
-      const { data } = await axios.post<SummarizeResponse>(
-         `/api/products/${productId}/reviews/summarize`
-      );
-      return data;
-   };
 
    const currentSummary =
       reviewsQuery.data?.summary || summaryMutation.data?.summary;
