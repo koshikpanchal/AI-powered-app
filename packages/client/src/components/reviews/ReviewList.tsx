@@ -3,6 +3,7 @@ import StarRating from './StarRating';
 import Skeleton from 'react-loading-skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/button';
+import { useState } from 'react';
 
 type Props = {
    productId: number;
@@ -21,6 +22,10 @@ type GetReviewsResponse = {
    reviews: Review[];
 };
 
+type SummarizeResponse = {
+   summary: string;
+};
+
 const ReviewList = ({ productId }: Props) => {
    const {
       data: reviewData,
@@ -31,10 +36,21 @@ const ReviewList = ({ productId }: Props) => {
       queryFn: () => fetchReviews(),
    });
 
+   const [summary, setSummarize] = useState('');
+
    const fetchReviews = async () => {
       const { data } = await axios.get(`/api/products/${productId}/reviews`);
       return data;
    };
+
+   const handleSummary = async () => {
+      const { data } = await axios.post<SummarizeResponse>(
+         `/api/products/${productId}/reviews/summarize`
+      );
+      setSummarize(data.summary);
+   };
+
+   const currentSummary = reviewData?.summary || summary;
 
    if (isLoading) {
       return (
@@ -63,10 +79,10 @@ const ReviewList = ({ productId }: Props) => {
    return (
       <div>
          <div>
-            {reviewData?.summary ? (
-               <p>{reviewData?.summary}</p>
+            {currentSummary ? (
+               <p>{currentSummary}</p>
             ) : (
-               <Button>Summarize</Button>
+               <Button onClick={handleSummary}>Summarize</Button>
             )}
          </div>
          <div className="flex flex-col gap-5">
