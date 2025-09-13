@@ -1,9 +1,9 @@
 import axios from 'axios';
 import StarRating from './StarRating';
-import Skeleton from 'react-loading-skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import { useState } from 'react';
+import ReviewSkeleton from './ReviewSkeleton';
 
 type Props = {
    productId: number;
@@ -37,6 +37,7 @@ const ReviewList = ({ productId }: Props) => {
    });
 
    const [summary, setSummarize] = useState('');
+   const [isSummaryLoading, setIsSummaryLoading] = useState<boolean>(false);
 
    const fetchReviews = async () => {
       const { data } = await axios.get(`/api/products/${productId}/reviews`);
@@ -44,26 +45,20 @@ const ReviewList = ({ productId }: Props) => {
    };
 
    const handleSummary = async () => {
+      setIsSummaryLoading(true);
+
       const { data } = await axios.post<SummarizeResponse>(
          `/api/products/${productId}/reviews/summarize`
       );
+
       setSummarize(data.summary);
+      setIsSummaryLoading(false);
    };
 
    const currentSummary = reviewData?.summary || summary;
 
    if (isLoading) {
-      return (
-         <div className="flex flex-col gap-5">
-            {[1, 2, 3].map((i) => (
-               <div key={i}>
-                  <Skeleton width={800} />
-                  <Skeleton width={400} />
-                  <Skeleton width={200} />
-               </div>
-            ))}
-         </div>
-      );
+      <ReviewSkeleton />;
    }
 
    if (error) {
@@ -82,7 +77,20 @@ const ReviewList = ({ productId }: Props) => {
             {currentSummary ? (
                <p>{currentSummary}</p>
             ) : (
-               <Button onClick={handleSummary}>Summarize</Button>
+               <div>
+                  <Button
+                     className="cursor-pointer"
+                     onClick={handleSummary}
+                     disabled={isSummaryLoading}
+                  >
+                     Summarize
+                  </Button>
+                  {isSummaryLoading && (
+                     <div className="py-3">
+                        <ReviewSkeleton />
+                     </div>
+                  )}
+               </div>
             )}
          </div>
          <div className="flex flex-col gap-5">
