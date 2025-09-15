@@ -1,13 +1,17 @@
 import OpenAI from 'openai';
+import { InferenceClient } from '@huggingface/inference';
+import summarizePrompt from './prompts/summarize-reviews.txt';
 
 // Hugging Face model endpoint via OpenAI SDK
 const MODEL = 'HuggingFaceTB/SmolLM3-3B:hf-inference';
 
 // Create a reusable client once
-const client = new OpenAI({
+const openAIClient = new OpenAI({
    baseURL: 'https://router.huggingface.co/v1',
    apiKey: process.env.HUGGING_FACE_ACCESS_KEY,
 });
+
+const infrenceClient = new InferenceClient(process.env.HUGGING_FACE_ACCESS_KEY);
 
 type GenerateTextOptions = {
    model?: string;
@@ -32,7 +36,7 @@ export const llmClient = {
       instructions,
       previousResponseId,
    }: GenerateTextOptions): Promise<GenerateTextResult> {
-      const response = await client.responses.create({
+      const response = await openAIClient.responses.create({
          model,
          input: prompt,
          temperature,
@@ -46,5 +50,24 @@ export const llmClient = {
          .trim();
 
       return { id: response.id, text: output };
+   },
+
+   async summarizeReviews(reviews: string) {
+      const chatCompletion = await infrenceClient.chatCompletion({
+         provider: 'cerebras',
+         model: 'meta-llama/Llama-3.1-8B-Instruct',
+         messages: [
+            {
+               role: 'system',
+               content: summarizePrompt,
+            },
+            {
+               role: 'user',
+               content: reviews,
+            },
+         ],
+      });
+
+      return chatCompletion.choices[0]?.message.content || '';
    },
 };
