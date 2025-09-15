@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { Ollama } from 'ollama';
 import { InferenceClient } from '@huggingface/inference';
 import summarizePrompt from './prompts/summarize-reviews.txt';
 
@@ -12,6 +13,8 @@ const openAIClient = new OpenAI({
 });
 
 const infrenceClient = new InferenceClient(process.env.HUGGING_FACE_ACCESS_KEY);
+
+const ollamaClient = new Ollama();
 
 type GenerateTextOptions = {
    model?: string;
@@ -52,7 +55,7 @@ export const llmClient = {
       return { id: response.id, text: output };
    },
 
-   async summarizeReviews(reviews: string) {
+   async summarizeReviewsViaHuggingFace(reviews: string) {
       const chatCompletion = await infrenceClient.chatCompletion({
          provider: 'cerebras',
          model: 'meta-llama/Llama-3.1-8B-Instruct',
@@ -69,5 +72,25 @@ export const llmClient = {
       });
 
       return chatCompletion.choices[0]?.message.content || '';
+   },
+
+   // this will generate using respective model using local machine
+   //perfect for some prviate tasks withour sending our data to web
+   async summarizeReviewsViaOllma(reviews: string) {
+      const response = await ollamaClient.chat({
+         model: 'tinyllama',
+         messages: [
+            {
+               role: 'system',
+               content: summarizePrompt,
+            },
+            {
+               role: 'user',
+               content: reviews,
+            },
+         ],
+      });
+
+      return response.message.content || '';
    },
 };
